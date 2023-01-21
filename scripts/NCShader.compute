@@ -1,0 +1,61 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture2D<float4> Result;
+
+float Resolutionx;
+float Resolutiony;
+
+float Time;
+float Timestep;
+float StartVel1;
+float StartVel2;
+float Leng1;
+float Leng2;
+float Mass1;
+float Mass2;
+float g;
+float Friction;
+
+float4 Iterat(float4 z)
+{
+    float theta1 = z[0];
+    float theta2 = z[1];
+    float w1 = z[2];
+    float w2 = z[3];
+
+    float2 a = float2((Leng2 / Leng1) * (Mass2 / (Mass1 + Mass2)) * cos(theta1 - theta2),
+                      (Leng1 / Leng2) * cos(theta1 - theta2));
+    float2 f = float2(-(Leng2 / Leng1) * (Mass2 / (Mass1 + Mass2)) * (w2*w2) * sin(theta1 - theta2) - ((g / Leng1) * sin(theta1)),
+                       (Leng1 / Leng2) * (w1*w1) * sin(theta1 - theta2) - ((g/Leng2) * sin(theta2)));
+    float g1 = (f[0] - (a[0] * f[1])) / (1 - (a[0] * a[1]));
+    float g2 = (-(a[1] * f[0]) + f[1]) / (1 - (a[0] * a[1]));
+    float4 endz = float4(z[0] + Timestep * z[2], 
+                        z[1] + Timestep * z[3], 
+                        Friction * (z[2] + Timestep*g1), 
+                        Friction * (z[3] + Timestep*g2));
+    return endz;
+}
+float3 HSVToRGB(float3 input)
+{
+    float4 K = float4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+    float3 p = abs(frac(input.xxx + K.xyz) * 6.0 - K.www);
+
+    return input.z * lerp(K.xxx, clamp(p - K.xxx, 0.0, 1.0), input.y);
+}
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    float PI = 3.1415926545363;
+    float starttheta1 = ((id.x / Resolutionx) - .5) * 2 * PI;
+    float starttheta2 = ((id.y / Resolutiony) - .5) * 2 * PI;
+    float4 Ne = float4(starttheta1, starttheta2, StartVel1, StartVel2);
+    for (int i=1; i<Time; i++)
+    {
+        Ne = Iterat(Ne);
+    }
+    float3 fincol = HSVToRGB(float3(Ne.x / 8, 1.0, Ne.y + PI));
+    Result[id.xy] = float4(fincol, 0.0);
+}
