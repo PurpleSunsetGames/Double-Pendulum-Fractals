@@ -12,7 +12,7 @@ public class MainShad : MonoBehaviour
 
     public Texture2D texture2d;
     public RenderTexture renderTexture;
-    public int[] rendertextureresolution;
+    public int rendertextureresolution;
 
     public Vector2 startvel;
     public Vector2 lengs;
@@ -28,11 +28,16 @@ public class MainShad : MonoBehaviour
     public GameObject xOption;
     public GameObject yOption;
     public GameObject timeSlider;
+    public GameObject resSlider;
+    public int unload;
+    public int unloadwhen;
+    Rect rec;
+
     // Start is called before the first frame update
     void Start()
     {
         image = gameObject.GetComponent<Image>();
-        renderTexture = new RenderTexture(rendertextureresolution[0], rendertextureresolution[1], 24);
+        renderTexture = new RenderTexture(rendertextureresolution, rendertextureresolution, 24);
         renderTexture.enableRandomWrite = true;
         renderTexture.Create();
 
@@ -42,11 +47,19 @@ public class MainShad : MonoBehaviour
 
     void Update()
     {
+        if (unload > unloadwhen)
+        {
+            Resources.UnloadUnusedAssets();
+            Destroy(renderTexture);
+            unload = 0;
+        }
+        unload++;
+
         xAxisType = xOption.GetComponent<TMP_Dropdown>().value;
         yAxisType = yOption.GetComponent<TMP_Dropdown>().value;
         time = timeSlider.GetComponent<Slider>().value;
-        
-        renderTexture = new RenderTexture(rendertextureresolution[0], rendertextureresolution[1], 24);
+        rendertextureresolution = (int)resSlider.GetComponent<Slider>().value;
+        renderTexture = new RenderTexture(rendertextureresolution, rendertextureresolution, 24);
         renderTexture.enableRandomWrite = true;
         renderTexture.Create();
 
@@ -54,6 +67,7 @@ public class MainShad : MonoBehaviour
         computeShader.SetFloat("Timestep", timestep);
 
         computeShader.SetTexture(0, "Result", renderTexture);
+
         computeShader.SetFloat("Resolutionx", renderTexture.width);
         computeShader.SetFloat("Resolutiony", renderTexture.height);
 
@@ -68,31 +82,16 @@ public class MainShad : MonoBehaviour
 
         computeShader.SetInt("XAxisType", xAxisType);
         computeShader.SetInt("YAxisType", yAxisType);
-
         computeShader.Dispatch(0, renderTexture.width/8, renderTexture.height/8, 1);
 
         texture2d = toTexture2D(renderTexture);
-        sprite = Sprite.Create(texture2d, new Rect(0, 0, renderTexture.width, renderTexture.height), new Vector2(0, 0), 10f, 1);
+        rec = new Rect(0, 0, renderTexture.width, renderTexture.height);
+        sprite = Sprite.Create(texture2d, rec, new Vector2(0, 0), 10f, 1);
         image.sprite = sprite;
-    }
-    public void OnRenderImage(RenderTexture src, RenderTexture dest)
-    {
-        if (renderTexture == null)
-        {
-            renderTexture = new RenderTexture(256, 256, 24);
-            renderTexture.enableRandomWrite = true;
-            renderTexture.Create();
-        }
-
-        computeShader.SetTexture(0, "Result", renderTexture);
-        computeShader.SetFloat("Resolution", Input.mousePosition.x);
-        computeShader.Dispatch(0, renderTexture.width / 8, renderTexture.height / 8, 1);
-
-        Graphics.Blit(renderTexture, dest);
     }
     Texture2D toTexture2D(RenderTexture rTex)
     {
-        Texture2D tex = new Texture2D(rendertextureresolution[0], rendertextureresolution[1], TextureFormat.RGB24, false);
+        Texture2D tex = new Texture2D(rendertextureresolution, rendertextureresolution, TextureFormat.RGB24, false);
         // ReadPixels looks at the active RenderTexture.
         RenderTexture.active = rTex;
         tex.ReadPixels(new Rect(0, 0, rTex.width, rTex.height), 0, 0);
