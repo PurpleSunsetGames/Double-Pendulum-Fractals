@@ -22,62 +22,65 @@ float Friction;
 int XAxisType;
 int YAxisType;
 
-float4 Iterat(float4 z)
+float4 Iterat(float4 z, float2 lengs, float2 masses)
 {
     float theta1 = z[0];
     float theta2 = z[1];
     float w1 = z[2];
     float w2 = z[3];
 
-    float2 a = float2((Leng2 / Leng1) * (Mass2 / (Mass1 + Mass2)) * cos(theta1 - theta2),
-                      (Leng1 / Leng2) * cos(theta1 - theta2));
-    float2 f = float2(-(Leng2 / Leng1) * (Mass2 / (Mass1 + Mass2)) * (w2*w2) * sin(theta1 - theta2) - ((g / Leng1) * sin(theta1)),
-                       (Leng1 / Leng2) * (w1*w1) * sin(theta1 - theta2) - ((g/Leng2) * sin(theta2)));
+    float2 a = float2((lengs[1] / lengs[0]) * (masses[1] / (masses[0] + masses[1])) * cos(theta1 - theta2),
+                      (lengs[0] / lengs[1]) * cos(theta1 - theta2));
+    float2 f = float2(-(lengs[1] / lengs[0]) * (masses[1] / (masses[0] + masses[1])) * (w2*w2) * sin(theta1 - theta2) - ((g / lengs[0]) * sin(theta1)),
+                       (lengs[1] / lengs[1]) * (w1*w1) * sin(theta1 - theta2) - ((g/lengs[1]) * sin(theta2)));
+
     float g1 = (f[0] - (a[0] * f[1])) / (1 - (a[0] * a[1]));
     float g2 = (-(a[1] * f[0]) + f[1]) / (1 - (a[0] * a[1]));
+
     float4 endz = float4(z[0] + Timestep * z[2], 
                         z[1] + Timestep * z[3], 
                         Friction * (z[2] + Timestep*g1), 
                         Friction * (z[3] + Timestep*g2));
     return endz;
 }
-float3 HSVToRGB(float3 input)
+float3 HSVToRGB(float3 HSV)
 {
-    float C = input[2] * input[1];
-    float M = input[2] - C;
-    float X = C * (1 - abs(fmod(input[0] / 60.0, 2) - 1));
-    float H = input[0];
-
-    float3 L;
-    if (0 <= H < 60)
+    float3 RGB = 0;
+    float C = HSV.z * HSV.y;
+    float H = HSV.x * 6.0;
+    float X = C * (1.0 - abs(fmod(H, 2.0) - 1.0));
+    if (HSV.y != 0)
     {
-        L = float3(C, X, 0.0);
+        int I = floor(H);
+        if (I == 0) 
+        {
+            RGB = float3(C, X, 0); 
+        }
+        else if (I == 1) 
+        { 
+            RGB = float3(X, C, 0); 
+        }
+        else if (I == 2) 
+        { 
+            RGB = float3(0, C, X); 
+        }
+        else if (I == 3) 
+        { 
+            RGB = float3(0, X, C); 
+        }
+        else if (I == 4) 
+        { 
+            RGB = float3(X, 0, C); 
+        }
+        else 
+        { 
+            RGB = float3(C, 0, X); 
+        }
     }
-    else if (H < 120)
-    {
-        L = float3(X, C, 0.0);
-    }
-    else if (H < 180)
-    {
-        L = float3(0.0, C, X);
-    }
-    else if (H < 240)
-    {
-        L = float3(0.0, X, C);
-    }
-    else if (H < 300)
-    {
-        L = float3(X, 0.0, C);
-    }
-    else if (H <= 360)
-    {
-        L = float3(C, 0.0, X);
-    }
-
-    float3 p = float3(L[0] + M, L[1] + M, L[2] + M);
-
-    return p;
+    float M = HSV.z - C;
+    return RGB + M;
 }
+
 [numthreads(8,8,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
@@ -88,45 +91,37 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     float y = 0.0;
     float z = 0.0;
     float w = 0.0;
+    float l1 = Leng1;
+    float l2 = Leng2;
+    float m1 = Mass1;
+    float m2 = Mass2;
 
-    if (XAxisType == 0)
-    {
-        x = startparam1;
-    }
-    if (XAxisType == 1)
-    {
-        y = startparam1;
-    }
-    if (XAxisType == 2)
-    {
-        z = startparam1;
-    }
-    if (XAxisType == 3)
-    {
-        w = startparam1;
-    }
+    if (XAxisType == 0){x = startparam1;}
+    if (XAxisType == 1){y = startparam1;}
+    if (XAxisType == 2){z = startparam1;}
+    if (XAxisType == 3){w = startparam1;}
+    if (XAxisType == 4){l1 = abs(startparam1);}
+    if (XAxisType == 5){l2 = abs(startparam1);}
+    if (XAxisType == 6){m1 = abs(startparam1);}
+    if (XAxisType == 7){m2 = abs(startparam1);}
 
-    if (YAxisType == 0)
-    {
-        x = startparam2;
-    }
-    if (YAxisType == 1)
-    {
-        y = startparam2;
-    }
-    if (YAxisType == 2)
-    {
-        z = startparam2;
-    }
-    if (YAxisType == 3)
-    {
-        w = startparam2;
-    }
+    if (YAxisType == 0){x = startparam2;}
+    if (YAxisType == 1){y = startparam2;}
+    if (YAxisType == 2){z = startparam2;}
+    if (YAxisType == 3){w = startparam2;}
+    if (YAxisType == 4){l1 = abs(startparam2);}
+    if (YAxisType == 5){l2 = abs(startparam2);}
+    if (YAxisType == 6){m1 = abs(startparam2);}
+    if (YAxisType == 7){m2 = abs(startparam2);}
+
     float4 Ne = float4(x, y, z, w);
     for (int i=1; i<Time; i++)
     {
-        Ne = Iterat(Ne);
+        if (m1 > 0 & m2 > 0 & l1 > 0 & l2 > 0)
+        {
+            Ne = Iterat(Ne, float2(l1, l2), float2(m1, m2));
+        }
     }
-    float3 fincol = HSVToRGB(float3(Ne.x / 8, 1.0, Ne.y + PI));
+    float3 fincol = HSVToRGB(float3(((Ne.x + PI)/ (2 * PI))%1, 1.0, ((Ne.y+PI) / (2 * PI))%1));
     Result[id.xy] = float4(fincol, 0.0);
 }
