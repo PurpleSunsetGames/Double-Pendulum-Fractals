@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class MainShad : MonoBehaviour
 {
@@ -18,8 +19,15 @@ public class MainShad : MonoBehaviour
     public Vector2 masses;
     public float g = 1;
     public float friction;
-
+    public float time;
     public float timestep = 0.06f;
+
+    public int xAxisType;
+    public int yAxisType;
+
+    public GameObject xOption;
+    public GameObject yOption;
+    public GameObject timeSlider;
     // Start is called before the first frame update
     void Start()
     {
@@ -34,17 +42,21 @@ public class MainShad : MonoBehaviour
 
     void Update()
     {
-
+        xAxisType = xOption.GetComponent<TMP_Dropdown>().value;
+        yAxisType = yOption.GetComponent<TMP_Dropdown>().value;
+        time = timeSlider.GetComponent<Slider>().value;
+        
         renderTexture = new RenderTexture(rendertextureresolution[0], rendertextureresolution[1], 24);
         renderTexture.enableRandomWrite = true;
         renderTexture.Create();
 
-        computeShader.SetFloat("Time", Input.mousePosition.x);
+        computeShader.SetFloat("Time", time);
         computeShader.SetFloat("Timestep", timestep);
 
         computeShader.SetTexture(0, "Result", renderTexture);
         computeShader.SetFloat("Resolutionx", renderTexture.width);
         computeShader.SetFloat("Resolutiony", renderTexture.height);
+
         computeShader.SetFloat("StartVel1", startvel[0]);
         computeShader.SetFloat("StartVel2", startvel[1]);
         computeShader.SetFloat("Leng1", lengs[0]);
@@ -53,6 +65,9 @@ public class MainShad : MonoBehaviour
         computeShader.SetFloat("Mass2", masses[1]);
         computeShader.SetFloat("g", g);
         computeShader.SetFloat("Friction", friction);
+
+        computeShader.SetInt("XAxisType", xAxisType);
+        computeShader.SetInt("YAxisType", yAxisType);
 
         computeShader.Dispatch(0, renderTexture.width/8, renderTexture.height/8, 1);
 

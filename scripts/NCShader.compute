@@ -19,6 +19,9 @@ float Mass2;
 float g;
 float Friction;
 
+int XAxisType;
+int YAxisType;
+
 float4 Iterat(float4 z)
 {
     float theta1 = z[0];
@@ -40,18 +43,86 @@ float4 Iterat(float4 z)
 }
 float3 HSVToRGB(float3 input)
 {
-    float4 K = float4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
-    float3 p = abs(frac(input.xxx + K.xyz) * 6.0 - K.www);
+    float C = input[2] * input[1];
+    float M = input[2] - C;
+    float X = C * (1 - abs(fmod(input[0] / 60.0, 2) - 1));
+    float H = input[0];
 
-    return input.z * lerp(K.xxx, clamp(p - K.xxx, 0.0, 1.0), input.y);
+    float3 L;
+    if (0 <= H < 60)
+    {
+        L = float3(C, X, 0.0);
+    }
+    else if (H < 120)
+    {
+        L = float3(X, C, 0.0);
+    }
+    else if (H < 180)
+    {
+        L = float3(0.0, C, X);
+    }
+    else if (H < 240)
+    {
+        L = float3(0.0, X, C);
+    }
+    else if (H < 300)
+    {
+        L = float3(X, 0.0, C);
+    }
+    else if (H <= 360)
+    {
+        L = float3(C, 0.0, X);
+    }
+
+    float3 p = float3(L[0] + M, L[1] + M, L[2] + M);
+
+    return p;
 }
 [numthreads(8,8,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
     float PI = 3.1415926545363;
-    float starttheta1 = ((id.x / Resolutionx) - .5) * 2 * PI;
-    float starttheta2 = ((id.y / Resolutiony) - .5) * 2 * PI;
-    float4 Ne = float4(starttheta1, starttheta2, StartVel1, StartVel2);
+    float startparam1 = ((id.x / Resolutionx) - .5) * 2 * PI;
+    float startparam2 = ((id.y / Resolutiony) - .5) * 2 * PI;
+    float x = 0.0;
+    float y = 0.0;
+    float z = 0.0;
+    float w = 0.0;
+
+    if (XAxisType == 0)
+    {
+        x = startparam1;
+    }
+    if (XAxisType == 1)
+    {
+        y = startparam1;
+    }
+    if (XAxisType == 2)
+    {
+        z = startparam1;
+    }
+    if (XAxisType == 3)
+    {
+        w = startparam1;
+    }
+
+    if (YAxisType == 0)
+    {
+        x = startparam2;
+    }
+    if (YAxisType == 1)
+    {
+        y = startparam2;
+    }
+    if (YAxisType == 2)
+    {
+        z = startparam2;
+    }
+    if (YAxisType == 3)
+    {
+        w = startparam2;
+    }
+    float4 Ne = float4(x, y, z, w);
     for (int i=1; i<Time; i++)
     {
         Ne = Iterat(Ne);
