@@ -1,4 +1,4 @@
-# DoubePendulumFractals
+# DoublePendulumFractals
   A Double Pendulum fractal and simulation in both Desmos and Unity compute shaders.
   Double Pendulums are chaotic systems which produce interesting behavior, and by extention very interesting visualizations. One of these visualizations is known as the double pendulum fractal; a colorful, increasingly detailed equation that becomes more complex and intricate the more time passes. These programs explore the double pendulum fractal in a fun and (hopefully) intuitive way.
   The desmos graph is fully functional at the moment, but I do plan to add more features later on. It is also much slower than the compute shader, of course, despite the 4x speedup that I've managed to obtain using desmos's new substitution feature. To use this graph simply:
