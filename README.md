@@ -7,10 +7,4 @@
 - Increment time and see how it evolves! Currently it can only go up to 113 iterations because of the way desmos works.
 - Move the draggable point around again to see how drastically different all the pendulums end up as because of their starting position!
 
-  The compute shader and C# script currently do not run on their own, so if you want to use or edit them you'll have to import them into unity. To do this:
-- Attach the C# script to an "Image" UI object (which would prefereably be attached to a Canvas aswell)
-- Drag the compute shader (NCShader) into the compute shader public variable within Unity
-- Set the other public variables (except for Sprite, RenderTexture, Texture2D and Image) to whatever you like. Recommended resolution is 256x256. Timestep should be around .06 and Friction should be very close to 1.
-- Currently Time (iterations) are determined by the mouse's x position, so.... yeah
-- WIGGLE THE MOUSE
-- Look at the pretty colors
+  To use the Unity program, simply download and unzip the zipped file (the latest one in releases) and double-click the one inside the folder named "gpustuffs."
